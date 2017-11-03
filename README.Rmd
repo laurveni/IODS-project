@@ -1,0 +1,11 @@
+---
+title: "Course IODS"
+output: html_document
+---
+
+## Why is the course useful 
+The course will teach you the basics of R and other open tools used to analyze and visualize data.
+
+## My course diary
+
+You can read my course diary [here](https://laurveni.github.io/IODS-project/).
