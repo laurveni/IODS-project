@@ -1,7 +1,51 @@
-# Insert chapter 2 title here
+# Regression and model validation
 
-*Describe the work you have done this week and summarize your learning.*
+The data set we are using was collected in 2014 for an international survey of Approaches to Learning.
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using  
+This is the dimension of the data set.
+```{r dimension, echo=FALSE}
+learning2014 <- read.csv(file="data/learning2014.csv")
+dim(learning2014)
+```
+
+This is the structure.
+```{r structure, echo=FALSE}
+str(learning2014)
+```
+
+You can find more information about the data [here](http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-meta.txt).
+
+Here is a graphical overview of the data. 
+```{r graph, echo=FALSE}
+library(GGally)
+library(ggplot2)
+p <- ggpairs(learning2014, mapping = aes(col=gender, alpha=0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+```
+
+Since the three variables having the highest (absolute) correlation with exam points are attitude, stra and surf, we fit a regression model with points as the target and attitude, stra and surf as explanantory variables. Here is a summary of the model.
+
+```{r model, echo=FALSE}
+my_model <- lm(points ~ attitude + stra + surf, data = learning2014)
+summary(my_model)
+```
+
+The p-value relative to the variables attitude and stra is very small, whereas for the variable surf it is close to 0.5. Hence surf does not have a statistically significant relationship with the target variable. If we remove it from the model, the summary of the new fitted model is the following.
+
+```{r model2, echo=FALSE}
+my_model2 <- lm(points ~ attitude + stra , data = learning2014)
+summary(my_model2)
+```
+
+As you can see, in the new model the p-value of attitude is very low and that of stra is also quite low, which means that both variables have a statistically significant relationship with exam points. The slope of the lines in the model is estimated to be roughly 0.35 for attitude and 0.91 for stra.
+The multiple R-squared of the model is 20.48% so it is not very high, thus the model will not be very reliable for predictions.
+
+Let us now look at the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage.
+
+```{r plots, echo=FALSE}
+par(mfrow = c(2,2))
+plot(my_model2, which=c(1,2,5))
+```
+
+In the Residuals vs Fitted plot the points are quite scattered so the size of the errors does not seem to depend on the explanatory variable. This means that the assumption that the variance is constant is reasonable. 
+In the Normal QQ-plot we can observe that there is a quite good fit to the line so the assumption that the errors of the model are normally distributed is reasonable. The Residuals vs Leverage plot shows that all values have low leverages so there is no observation with unusually high impact.
