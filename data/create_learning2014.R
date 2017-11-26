@@ -55,3 +55,5 @@ MyData <- read.csv(file="data/learning2014.csv")
 str(MyData)
 head(MyData)
 
+
+
