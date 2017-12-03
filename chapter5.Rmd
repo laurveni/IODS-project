@@ -1,0 +1,126 @@
+#Dimensionality reduction techniques
+
+**Principal Component Analysis**
+
+The 'human' dataset originates from the United Nations Development Programme. For more information see [their data page](http://hdr.undp.org/en/content/human-development-index-hdi) and the [technical notes](http://hdr.undp.org/sites/default/files/hdr2015_technical_notes.pdf) about calculating the human development indices.
+
+The variable names in the data have been shortened, two new variables have been computed and only part of the original variables was kept.
+
+See the structure of our data set, which now contains 155 obsservations of  8 variables.
+
+```{r}
+human_ <- read.csv(file="data/human.csv")
+str(human_)
+```
+
+The row names are defined as the names of the countries. The variables are the following:
+
+* "sedu_ratio" = Ratio of females/males with at least secondary education
+* "lab_ratio" = Ratio of females/males in the labour force
+* "life_exp" = Life expectancy at birth
+* "exp_edu" = Expected years of schooling 
+* "gni_c" = Gross National Income per capita
+* "mat_mort" = Maternal mortality ratio
+* "ad_birth" = Adolescent birth rate
+* "repr_parl" = Percetange of female representatives in parliament
+
+We now visualize an overview of the data and the correlation matrix to get some insight on the relationships between the variables.
+
+```{r}
+library(GGally)
+library(dplyr)
+library(corrplot)
+# visualize the 'human_' variables
+ggpairs(human_)
+
+# compute the correlation matrix and visualize it with corrplot
+cor(human_) %>% corrplot
+```
+
+We can see, for example, a quite strong positive correlation between life_exp and exp_edu: in countries where the life expectancy is higher people also tend to go to school longer. The strong negative correlation between life_exp and mat_mort is easy to believe: if the maternity mortality ratio is higher then the life expectancy is lower. The correlation matrix also suggests that countries with high maternity mortality ratio have fewer expected years of schooling and low ratio of females vs male with at least secondary education.
+
+We now first perform Principal Component Analysis (PCA) on the not standardized data and compare it with the results on the standardized data. Let us look at the variability captured by the principal components and the biplot displaying the observations by the first two principal components (PC1 and PC2), along with arrows representing the original variables.
+
+```{r}
+pca_ns <- prcomp(human_)
+# create and print out a summary of pca_human
+ns <- summary(pca_ns)
+# rounded percetanges of variance captured by each PC
+pca_pr <- round(100*ns$importance[2, ], digits = 1)
+# print out the percentages of variance
+pca_pr
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+# draw a biplot
+biplot(pca_ns, cex = c(0.8, 0.8), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+
+```
+
+One principal component captures all the variability, something is wrong. This principal component corresponds to the variable -gni_c (Gross National Income per capita).
+
+We now standardize the data and repeat the PCA, showing again the variability captured by the principal components and the biplot.
+
+```{r}
+human_std <- scale(human_)
+pca_s <- prcomp(human_std)
+# create and print out a summary of pca_human
+s <- summary(pca_s)
+# rounded percetanges of variance captured by each PC
+pca_prs <- round(100*s$importance[2, ], digits = 1)
+# print out the percentages of variance
+pca_prs
+# create object pc_lab to be used as axis labels
+pc_labs <- paste0(names(pca_prs), " (", pca_prs, "%)")
+# draw a biplot
+biplot(pca_s, cex = c(0.8,0.8), col = c("grey40", "deeppink2"), xlab = pc_labs[1], ylab = pc_labs[2])
+
+```
+
+The results are now very different: the first principal component (PC1) captures 53.6% of the variablity and the second one (PC2) 16.2%. The variables mat_mort and ad_birth have high positive correlation with PC1, wereas the variables exp_edu, life_exp, sedu_ratio and gni_c have high negative correlation with PC1. Therefore it seems that life expectancy, maternal mortality, adolescent birth ratio, the expected years of education (especially for females) and the gross national income per capita are the most important criteria for assessing the development of a country.
+
+The variables lab_ratio and repr_parl have high positive correlation with PC2. This confirms the common knowledge that developed countries have a higher percentage of females working and being members of the parliament compared to lower developed countries. 
+
+Clearly it is good to standardize the data before performing PCA, since it is sensitive to the relative scaling of the original features and assumes that features with larger variance are more important than features with smaller variance. As we have seen, one can get very different result if the data is not standardized.
+
+
+**Multiple Correspondence Analysis**
+
+We now load the tea dataset from the package [FactoMineR](https://cran.r-project.org/web/packages/FactoMineR/index.html) and look at its structure and dimensions. This dataset contains the answers of a questionnaire on tea consumption. 
+
+```{r}
+library(FactoMineR)
+data("tea")
+str(tea)
+dim(tea)
+```
+
+Since the dimensions are quite large, we restrict to a fewer number of variables, look at the summaries and structure of these data and visualize it.
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+# column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+# select the 'keep_columns' to create a new dataset
+tea_time <- dplyr::select(tea, one_of(keep_columns))
+# look at the summaries and structure of the data
+summary(tea_time)
+str(tea_time)
+# visualize the dataset
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") +geom_bar()+ theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+```
+
+We now perform Multiple Correspondence Analysis on this subset of the original tea dataset, look at the summary of the model and plot the variables.
+
+```{r}
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+# summary of the model
+summary(mca)
+# visualize MCA
+plot(mca, invisible=c("ind"),habillage = "quali")
+```
+
+The first dimension (Dim 1) captures only 15% of the variance, and the second one 14%. 
